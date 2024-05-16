@@ -50,3 +50,21 @@ spec:
         image: docker.elastic.co/kibana/kibana:7.10.0
         ports:
         - containerPort: 5601
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nulled
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nulled
+  template:
+    metadata:
+      labels:
+        app: nulled
+    spec:
+      containers:
+      - name: nulled
+        image: username/nulled
