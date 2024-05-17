@@ -1,0 +1,14 @@
+# Use the official Python image as base
+FROM python:3.9-slim
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the Python script into the container
+COPY scrape.py .
+
+# Install dependencies
+RUN pip install requests beautifulsoup4 requests-html elasticsearch lxml_html_clean
+
+# Define the command to run your script
+CMD ["python","-u", "scrape.py"]

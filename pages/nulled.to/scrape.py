@@ -7,16 +7,11 @@ from requests_html import HTMLSession
 from elasticsearch import Elasticsearch
 from datetime import datetime, timedelta
 
-# Initialize session
-session = HTMLSession()
-
-# Elasticsearch connection
-try:
-    es = Elasticsearch([{'scheme': 'http', 'host': 'elasticsearch', 'port': 9200}])
-    if not es.ping():
-        raise ValueError("Connection failed")
-except Exception as e:
-    print("Error connecting to Elasticsearch:", e)
+#Vars
+source = "nulled.to"
+topics = []
+processed_urls = set()
+es_index = "scraped_nulled"
 
 # User agents and pages to scrape
 user_agents = [
@@ -36,15 +31,27 @@ pages = [
     "https://www.nulled.to/#!Monetizing",
     "https://www.nulled.to/#!Marketplace"
 ]
-topics = []
 
-processed_urls = set()
+
+# Initialize session
+session = HTMLSession()
+
+# Elasticsearch connection
+try:
+    es = Elasticsearch([{'scheme': 'http', 'host': 'elasticsearch', 'port': 9200}])
+    if not es.ping():
+        raise ValueError("Connection failed")
+except Exception as e:
+    print("Error connecting to Elasticsearch:", e)
+    exit()
+
+
 
 def save_to_db(data):
     if data['url'] not in processed_urls:
         doc_id = f"{data['url']}_{data['user_id']}_{data['timestamp']}"
         try:
-            es.update(index="scraped_data", id=doc_id, body={"doc": data, "doc_as_upsert": True})
+            es.update(index=es_index, id=doc_id, body={"doc": data, "doc_as_upsert": True})
             processed_urls.add(data['url'])
         except Exception as e:
             print("Error indexing data:", e)
@@ -55,6 +62,12 @@ def scrape_forums(url):
     try:
         page = requests.get(url)
         soup = BeautifulSoup(page.content, 'html.parser')
+
+
+        if "Just a moment..." in soup.title.text:
+            print("Cloudflare detected, stopping")
+            return
+        
         all_links = soup.find_all("a")
         pattern = re.compile(r".*/forum/.*")
         for link in all_links:
@@ -81,7 +94,7 @@ def scrape_posts(soup):
             else:
                 timestamp = timestamp.replace("-", "")
             
-            save_to_db({"url": url, "title": title, "user_id": user_id, "author": author, "timestamp": timestamp})
+            save_to_db({"source": source,"url": url, "title": title, "user_id": user_id, "author": author, "timestamp": timestamp})
             print(f"Inserted {url}")
         except Exception as e:
             print("Error scraping posts:", e)
@@ -102,9 +115,9 @@ for page in pages:
     print(f"Scraping page: {page}")
     scrape_forums(page)
 
+
 #remove duplicates from topics
 topics = list(dict.fromkeys(topics))
-
 for topic in topics:
     print(f"Scraping topic: {topic}")
     scrape_topics(topic)
