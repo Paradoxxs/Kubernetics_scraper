@@ -38,12 +38,18 @@ pages = [
 ]
 topics = []
 
+processed_urls = set()
+
 def save_to_db(data):
-    # Index data into Elasticsearch
-    try:
-        es.index(index="scraped_data", body={"data": data})
-    except Exception as e:
-        print("Error indexing data:", e)
+    if data['url'] not in processed_urls:
+        doc_id = f"{data['url']}_{data['user_id']}_{data['timestamp']}"
+        try:
+            es.update(index="scraped_data", id=doc_id, body={"doc": data, "doc_as_upsert": True})
+            processed_urls.add(data['url'])
+        except Exception as e:
+            print("Error indexing data:", e)
+    else:
+        print(f"Data with URL {data['url']} already processed")
 
 def scrape_forums(url):
     try:
@@ -96,13 +102,10 @@ for page in pages:
     print(f"Scraping page: {page}")
     scrape_forums(page)
 
-# Update the select statement so it only gets the ones that have not been scraped before
+#remove duplicates from topics
+topics = list(dict.fromkeys(topics))
+
 for topic in topics:
     print(f"Scraping topic: {topic}")
-    # Check if the topic has already been scraped by querying Elasticsearch
-    try:
-        if not es.exists(index="scraped_data", id=topic):
-            scrape_topics(topic)
-            time.sleep(5)
-    except Exception as e:
-        print("Error checking or scraping topic:", e)
+    scrape_topics(topic)
+    time.sleep(5)
