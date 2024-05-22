@@ -172,6 +172,23 @@ services:
     volumes:
       - certs:/app/certs
 
+  watcher:
+    container_name: watcher
+    image: watcher
+    environment:
+      - KEYWORDS=denmark,danish,onlyfans
+      - ELASTIC_USER=elastic
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - ELASTICSEARCH_SSL_CERT=certs/ca/ca.crt
+      - ELASTICSEARCH_HOSTS=es01
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - DISCORD_CHANNEL=${DISCORD_CHANNEL}
+    depends_on:
+      es01:
+        condition: service_healthy
+    volumes:
+      - certs:/app/certs
+
 volumes:
  certs:
    driver: local
