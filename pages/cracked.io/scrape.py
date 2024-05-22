@@ -6,6 +6,8 @@ import re
 from requests_html import HTMLSession
 from elasticsearch import Elasticsearch
 from datetime import datetime, timedelta
+import os
+
 
 # varibles
 urls = []
@@ -17,13 +19,23 @@ ex_index = "scraped_cracked"
 # Initialize session
 session = HTMLSession()
 
-# Elasticsearch connection
+# Get Elasticsearch credentials from environment variables
+username = os.getenv('ELASTIC_USER', 'elastic')
+password = os.getenv('ELASTIC_PASSWORD', 'changeme')  # Use a default or handle it differently
+ca_certs = os.getenv('ELASTICSEARCH_SSL_CERT', None)
+es_host = os.getenv('ELASTICSEARCH_HOSTS', 'elasticsearch')
 try:
-    es = Elasticsearch([{'scheme': 'http', 'host': 'elasticsearch', 'port': 9200}])
+    es = Elasticsearch(
+        [{'scheme': 'https', 'host': 'es01', 'port': 9200}],
+        basic_auth=(username, password),
+        verify_certs=True,
+        ca_certs=ca_certs
+    )
     if not es.ping():
         raise ValueError("Connection failed")
 except Exception as e:
     print("Error connecting to Elasticsearch:", e)
+    exit()
 
 # User agents and pages to scrape
 user_agents = [

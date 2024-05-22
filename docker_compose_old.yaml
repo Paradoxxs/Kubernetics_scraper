@@ -1,0 +1,58 @@
+services:
+  elasticsearch:
+    container_name: es-container
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.2
+    environment:
+      - xpack.security.enabled=false
+      - "discovery.type=single-node"
+    networks:
+      - es-net
+    ports:
+      - 9200:9200
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+  
+  kibana:
+    container_name: kb-container
+    image: docker.elastic.co/kibana/kibana:8.12.2
+    environment:
+      - ELASTICSEARCH_HOSTS=http://es-container:9200
+    networks:
+      - es-net
+    depends_on:
+      - elasticsearch
+    ports:
+      - 5601:5601
+
+  nulled:
+    container_name: nulled
+    image: scraper_nulled
+    networks:
+      - es-net
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+  cracked:
+    container_name: cracked
+    image: scraper_cracked
+    networks:
+      - es-net
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+  shellsec:
+    container_name: shellsec
+    image: scraper_shellsec
+    networks:
+      - es-net
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+networks:
+  es-net:
+    driver: bridge
