@@ -1,0 +1,15 @@
+# Use the official Python image as base
+FROM python:3.9-slim
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the Python script into the container
+COPY script.py .
+COPY anon.session .
+
+# Install dependencie
+RUN pip install elasticsearch telethon 
+
+# Define the command to run your script
+CMD ["python","-u", "script.py"]

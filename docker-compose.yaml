@@ -189,6 +189,23 @@ services:
     volumes:
       - certs:/app/certs
 
+
+  telegram_collector:
+    container_name: telegram_collector
+    image: telegram_collector
+    environment:
+      - ELASTIC_USER=elastic
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - ELASTICSEARCH_SSL_CERT=certs/ca/ca.crt
+      - ELASTICSEARCH_HOSTS=es01
+      - TELEGRAM_ID=${TELEGRAM_ID}
+      - TELEGRAM_HASH=${TELEGRAM_HASH}
+    depends_on:
+      es01:
+        condition: service_healthy
+    volumes:
+      - certs:/app/certs
+
 volumes:
  certs:
    driver: local
